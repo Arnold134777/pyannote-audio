@@ -570,7 +570,7 @@ class Inference(BaseInference):
             )
 
         masks = 1 - np.isnan(scores)
-        scores.data = np.nan_to_num(scores.data, copy=False, nan=0.0)
+        Inference.__nan_to_num_in_chunks(scores.data, chunk_size=1000, nan_value=0.0)
 
         # Hamming window used for overlap-add aggregation
         hamming_window = (
@@ -829,3 +829,12 @@ class Inference(BaseInference):
         )
 
         return SlidingWindowFeature(stitches, stitched_chunks)
+
+    @staticmethod
+    def __nan_to_num_in_chunks(data, chunk_size, nan_value=0.0):
+        num_chunks = data.shape[0] // chunk_size + (1 if data.shape[0] % chunk_size != 0 else 0)
+        for i in range(num_chunks):
+            start = i * chunk_size
+            end = min((i + 1) * chunk_size, data.shape[0])
+            np.nan_to_num(data[start:end], copy=False, nan=nan_value)
+
